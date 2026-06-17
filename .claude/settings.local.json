@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Start-Sleep -Seconds 3; $pages = @\\(\"/jobs\", \"/jobs/1\", \"/jobs/2\", \"/jobs/applications\"\\); foreach \\($p in $pages\\) { try { $r = Invoke-WebRequest -Uri \"http://localhost:3000$p\" -UseBasicParsing -TimeoutSec 10; Write-Host \"$p — $\\($r.StatusCode\\)\" } catch { Write-Host \"$p — ERROR: $_\" } })",
+      "PowerShell(Start-Sleep -Seconds 3; $r = Invoke-WebRequest -Uri \"http://localhost:3000/profile\" -UseBasicParsing -TimeoutSec 15; Write-Host \"Status: $\\($r.StatusCode\\)\"; if \\($r.Content -match \"Badge & Achievements\"\\) { Write-Host \"✓ Profile page OK\" } else { Write-Host \"Content: \" + $r.Content.Substring\\(0, 200\\) })",
+      "PowerShell(Start-Sleep -Seconds 2; $r = Invoke-WebRequest -Uri \"http://localhost:3000/profile\" -UseBasicParsing -TimeoutSec 15; if \\($r.StatusCode -eq 200 -and $r.Content.Length -gt 5000\\) { Write-Host \"✓ Profile page loaded successfully \\($\\(\\($r.Content.Length/1000\\).ToString\\(\"F1\"\\)\\)KB\\)\" } else { Write-Host \"⚠ Unexpected response\" })",
+      "PowerShell(Start-Sleep -Seconds 4; $pages = @\\(\"/events\", \"/events/evt-1\"\\); foreach \\($p in $pages\\) { try { $r = Invoke-WebRequest -Uri \"http://localhost:3000$p\" -UseBasicParsing -TimeoutSec 10; Write-Host \"$p — $\\($r.StatusCode\\)\" } catch { Write-Host \"$p — ERROR\" } })",
+      "PowerShell(Start-Sleep -Seconds 5; $pages = @\\(\"/\", \"/jobs\", \"/passport\", \"/profile\", \"/events\", \"/admin\"\\); foreach \\($p in $pages\\) { $r = Invoke-WebRequest -Uri \"http://localhost:3000$p\" -UseBasicParsing -TimeoutSec 15; Write-Host \"$p — $\\($r.StatusCode\\)\" })",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/jobs)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/passport)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/employer)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/employer/post-job)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/employer/jobs/ej1/applicants)"
+    ]
+  }
+}
