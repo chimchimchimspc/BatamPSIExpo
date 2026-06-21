@@ -11,7 +11,14 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/passport)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/employer)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/employer/post-job)",
-      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/employer/jobs/ej1/applicants)"
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/employer/jobs/ej1/applicants)",
+      "Skill(run)",
+      "Bash(npm run *)",
+      "Bash(netstat -ano)",
+      "Bash(curl -s http://localhost:3000)",
+      "PowerShell(Start-Process \"http://localhost:3000\")",
+      "Bash(curl -s http://localhost:3000/auth/login)",
+      "PowerShell(Start-Process \"http://localhost:3000#jobs\")"
     ]
   }
 }
