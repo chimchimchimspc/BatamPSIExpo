@@ -18,7 +18,11 @@
       "Bash(curl -s http://localhost:3000)",
       "PowerShell(Start-Process \"http://localhost:3000\")",
       "Bash(curl -s http://localhost:3000/auth/login)",
-      "PowerShell(Start-Process \"http://localhost:3000#jobs\")"
+      "PowerShell(Start-Process \"http://localhost:3000#jobs\")",
+      "Bash(dir D:\\\\PSI\\\\BATAM-PSI\\\\BatamPSIExpo\\\\backend *)",
+      "Bash(dir D:\\\\PSI\\\\BATAM-PSI\\\\BatamPSIExpo\\\\jogja-freelance *)",
+      "Bash(dir D:\\\\PSI\\\\BATAM-PSI\\\\BatamPSIExpo\\\\backend\\\\src *)",
+      "PowerShell(Get-Command *)"
     ]
   }
 }
