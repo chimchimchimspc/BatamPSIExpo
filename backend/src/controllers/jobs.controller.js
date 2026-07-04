@@ -118,13 +118,22 @@ async function getJob(req, res, next) {
 async function createJob(req, res, next) {
   try {
     const {
-      title, category_id, description,
+      title, category, category_id, description,
       budget_min, budget_max, budget_type,
       deadline_days, deadline_date,
       location, location_type, experience_level,
       contact_whatsapp, contact_email,
       skills = [], requirements = [],
     } = req.body;
+
+    let resolvedCategoryId = category_id || null;
+    if (!resolvedCategoryId && category) {
+      const catRes = await query("SELECT id FROM job_categories WHERE name ILIKE $1", [category]);
+      resolvedCategoryId = catRes.rows[0]?.id || null;
+    }
+    const resolvedDeadlineDate = deadline_date || (deadline_days
+      ? new Date(Date.now() + deadline_days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+      : null);
 
     const client = await getClient();
     try {
@@ -137,8 +146,8 @@ async function createJob(req, res, next) {
             contact_whatsapp, contact_email, status)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,'pending_review')
          RETURNING *`,
-        [req.user.id, title, category_id, description, budget_min, budget_max, budget_type,
-         deadline_days, deadline_date, location, location_type, experience_level,
+        [req.user.id, title, resolvedCategoryId, description, budget_min, budget_max, budget_type,
+         deadline_days, resolvedDeadlineDate, location, location_type, experience_level,
          contact_whatsapp, contact_email]
       );
       const job = rows[0];

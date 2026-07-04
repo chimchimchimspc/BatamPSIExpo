@@ -7,8 +7,9 @@ const registerRules = [
   body("email").isEmail().normalizeEmail(),
   body("password").isLength({ min: 8 }).withMessage("Password min 8 characters"),
   body("full_name").trim().notEmpty().withMessage("Full name required"),
-  body("role").optional().isIn(["freelancer", "employer"]),
+  body("role").optional().isIn(["freelancer", "employer", "event_organizer"]),
   body("city").optional().trim(),
+  body("company_name").optional().trim(),
 ];
 
 const loginRules = [

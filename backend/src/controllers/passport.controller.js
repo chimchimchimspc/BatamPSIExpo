@@ -37,7 +37,8 @@ const PASSPORT_DAYS = [
 async function getJourney(req, res, next) {
   try {
     const progress = await passportService.getProgress(req.user.id);
-    return success(res, { journey: PASSPORT_DAYS, progress });
+    const days = PASSPORT_DAYS.map((d) => ({ ...d, day_number: d.day }));
+    return success(res, { days, progress });
   } catch (err) {
     next(err);
   }

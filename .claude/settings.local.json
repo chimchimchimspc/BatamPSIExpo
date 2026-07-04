@@ -22,7 +22,15 @@
       "Bash(dir D:\\\\PSI\\\\BATAM-PSI\\\\BatamPSIExpo\\\\backend *)",
       "Bash(dir D:\\\\PSI\\\\BATAM-PSI\\\\BatamPSIExpo\\\\jogja-freelance *)",
       "Bash(dir D:\\\\PSI\\\\BATAM-PSI\\\\BatamPSIExpo\\\\backend\\\\src *)",
-      "PowerShell(Get-Command *)"
+      "PowerShell(Get-Command *)",
+      "Bash(docker-compose build *)",
+      "Bash(docker-compose up *)",
+      "Bash(docker exec batampsi_db *)",
+      "Bash(docker --version)",
+      "Bash(docker compose *)",
+      "Bash(docker info *)",
+      "Bash(\"/c/Program Files/Docker/Docker/Docker Desktop.exe\")",
+      "Bash(disown)"
     ]
   }
 }

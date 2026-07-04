@@ -6,7 +6,7 @@ async function listEvents(req, res, next) {
   try {
     const { page = 1, limit = 20, type, upcoming, past } = req.query;
     const offset = (page - 1) * limit;
-    const conditions = [];
+    const conditions = ["e.status = 'active'"];
     const params = [];
     let idx = 1;
 
@@ -170,7 +170,7 @@ async function createEvent(req, res, next) {
       }
 
       await client.query("COMMIT");
-      return created(res, ev, "Event created");
+      return created(res, ev, "Event submitted for review");
     } catch (err) {
       await client.query("ROLLBACK");
       throw err;

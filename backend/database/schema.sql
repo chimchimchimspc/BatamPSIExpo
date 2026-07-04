@@ -11,7 +11,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- ENUM TYPES
 -- ============================================================
 
-CREATE TYPE user_role AS ENUM ('freelancer', 'employer', 'admin');
+CREATE TYPE user_role AS ENUM ('freelancer', 'employer', 'event_organizer', 'admin');
 
 CREATE TYPE user_level AS ENUM ('Bronze', 'Silver', 'Gold', 'Platinum');
 
@@ -42,6 +42,8 @@ CREATE TYPE badge_trigger_condition AS ENUM (
 
 CREATE TYPE event_type AS ENUM ('workshop', 'meetup', 'coffee_chat', 'networking');
 
+CREATE TYPE event_status AS ENUM ('pending_review', 'active', 'rejected');
+
 CREATE TYPE notification_type AS ENUM (
   'job_match',
   'application_update',
@@ -49,7 +51,9 @@ CREATE TYPE notification_type AS ENUM (
   'event_reminder',
   'daily_task',
   'job_approved',
-  'job_rejected'
+  'job_rejected',
+  'event_approved',
+  'event_rejected'
 );
 
 
@@ -314,6 +318,10 @@ CREATE TABLE events (
   is_free           BOOLEAN DEFAULT TRUE,
   price             DECIMAL(10,2),
   registration_url  TEXT,
+  status            event_status DEFAULT 'pending_review',
+  admin_notes       TEXT,
+  reviewed_by       UUID REFERENCES users(id) ON DELETE SET NULL,
+  reviewed_at       TIMESTAMP,
   created_at        TIMESTAMP DEFAULT NOW(),
   updated_at        TIMESTAMP DEFAULT NOW()
 );

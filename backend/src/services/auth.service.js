@@ -2,7 +2,7 @@ const bcrypt = require("bcryptjs");
 const { query, getClient } = require("../config/database");
 const { signToken, signRefreshToken } = require("../utils/jwt.util");
 
-async function register({ email, password, full_name, role = "freelancer", city = "Yogyakarta" }) {
+async function register({ email, password, full_name, role = "freelancer", city = "Yogyakarta", company_name }) {
   const exists = await query("SELECT id FROM users WHERE email = $1", [email]);
   if (exists.rowCount > 0) {
     const err = new Error("Email already registered");
@@ -33,10 +33,10 @@ async function register({ email, password, full_name, role = "freelancer", city 
         "INSERT INTO passport_progress (user_id) VALUES ($1)",
         [user.id]
       );
-    } else if (role === "employer") {
+    } else if (role === "employer" || role === "event_organizer") {
       await client.query(
         "INSERT INTO employer_profiles (user_id, company_name) VALUES ($1, $2)",
-        [user.id, full_name]
+        [user.id, company_name || full_name]
       );
     }
 
