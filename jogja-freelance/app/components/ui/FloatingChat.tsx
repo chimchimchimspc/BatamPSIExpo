@@ -1,8 +1,10 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { MessageCircle, X } from "lucide-react";
 
 export default function FloatingChat() {
+  const pathname = usePathname();
   const [chatOpen, setChatOpen] = useState(false);
   const chatRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -24,6 +26,9 @@ export default function FloatingChat() {
       return () => document.removeEventListener("mousedown", handleClickOutside);
     }
   }, [chatOpen]);
+
+  // Hide the floating widget on the full chat page (reappears elsewhere).
+  if (pathname?.startsWith("/chat")) return null;
 
   return (
     <>
