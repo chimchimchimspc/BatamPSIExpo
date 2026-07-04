@@ -1,0 +1,4 @@
+# Environment (contains secrets — keep only .env.example in git)
+.env
+.env.local
+.env.*.local
