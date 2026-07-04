@@ -11,4 +11,11 @@ router.use("/events",        require("./events.routes"));
 router.use("/notifications", require("./notifications.routes"));
 router.use("/admin",         require("./admin.routes"));
 
+// Feature modules (self-contained, per-feature folders under src/features/)
+router.use("/uploads",       require("../features/uploads/uploads.routes"));
+router.use("/reviews",       require("../features/reviews/reviews.routes"));
+router.use("/chat",          require("../features/chat/chat.routes"));
+router.use("/auth",          require("../features/auth-extended/authExtended.routes"));
+router.use("/session",       require("../features/session/session.routes"));
+
 module.exports = router;
