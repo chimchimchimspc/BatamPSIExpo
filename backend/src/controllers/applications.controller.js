@@ -119,6 +119,29 @@ async function getApplicationsForJob(req, res, next) {
   }
 }
 
+async function getEmployerApplications(req, res, next) {
+  try {
+    const limit = Math.min(parseInt(req.query.limit) || 10, 50);
+    const { rows } = await query(
+      `SELECT a.id, a.status, a.submitted_at,
+              u.id AS freelancer_id, u.full_name AS name,
+              fp.level, fp.rating, fp.profile_picture_url,
+              jp.id AS job_id, jp.title AS job_title
+       FROM applications a
+       JOIN job_postings jp ON jp.id = a.job_id
+       JOIN users u ON u.id = a.freelancer_id
+       LEFT JOIN freelancer_profiles fp ON fp.user_id = u.id
+       WHERE jp.employer_id = $1
+       ORDER BY a.submitted_at DESC
+       LIMIT $2`,
+      [req.user.id, limit]
+    );
+    return success(res, rows);
+  } catch (err) {
+    next(err);
+  }
+}
+
 async function updateApplicationStatus(req, res, next) {
   try {
     const { id } = req.params;
@@ -183,5 +206,6 @@ async function withdrawApplication(req, res, next) {
 
 module.exports = {
   submitApplication, getMyApplications,
-  getApplicationsForJob, updateApplicationStatus, withdrawApplication,
+  getApplicationsForJob, getEmployerApplications,
+  updateApplicationStatus, withdrawApplication,
 };

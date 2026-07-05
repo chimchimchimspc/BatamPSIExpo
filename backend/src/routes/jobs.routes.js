@@ -4,8 +4,9 @@ const c = require("../controllers/jobs.controller");
 const { authenticate, requireRole } = require("../middleware/auth.middleware");
 
 router.get("/",       c.listJobs);
+router.get("/mine",   authenticate, requireRole("employer", "event_organizer", "admin"), c.getMyJobs);
 router.get("/:id",    c.getJob);
-router.post("/",      authenticate, requireRole("employer", "admin"), c.createJob);
+router.post("/",      authenticate, requireRole("employer", "event_organizer", "admin"), c.createJob);
 router.put("/:id",    authenticate, c.updateJob);
 router.delete("/:id", authenticate, c.deleteJob);
 

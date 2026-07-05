@@ -1,5 +1,6 @@
 require("dotenv").config();
 const express = require("express");
+const path = require("path");
 const cors = require("cors");
 const helmet = require("helmet");
 const { globalLimiter } = require("./middleware/rateLimiter.middleware");
@@ -15,6 +16,13 @@ app.use(cors({
 }));
 
 app.use(helmet());
+
+// Uploaded images are fetched from the frontend origin (localhost:3000),
+// so relax helmet's same-origin resource policy for this path only
+app.use("/uploads", express.static(path.join(__dirname, "../uploads"), {
+  setHeaders: (res) => res.setHeader("Cross-Origin-Resource-Policy", "cross-origin"),
+}));
+
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(globalLimiter);

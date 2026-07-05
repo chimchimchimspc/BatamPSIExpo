@@ -30,7 +30,14 @@
       "Bash(docker compose *)",
       "Bash(docker info *)",
       "Bash(\"/c/Program Files/Docker/Docker/Docker Desktop.exe\")",
-      "Bash(disown)"
+      "Bash(disown)",
+      "PowerShell(head *)",
+      "PowerShell(& 'C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe' -U postgres -c \"SELECT 1\")",
+      "Bash(npm install *)",
+      "PowerShell(& 'C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe' -U postgres -c \"CREATE DATABASE jogja_freelance_db;\")",
+      "PowerShell(& 'C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe' -U postgres -d jogja_freelance_db -f \"F:\\\\EXPO PSI\\\\backend\\\\database\\\\schema.sql\")",
+      "Bash(NEXT_EXPERIMENTAL_USE_SWC=true npm run dev)",
+      "Bash(curl *)"
     ]
   }
 }

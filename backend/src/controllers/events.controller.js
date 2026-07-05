@@ -41,6 +41,29 @@ async function listEvents(req, res, next) {
   }
 }
 
+async function getMyEvents(req, res, next) {
+  try {
+    const { rows } = await query(
+      `SELECT e.id, e.title, e.description, e.type,
+              e.event_date, e.event_time, e.duration_minutes,
+              e.location_name, e.organizer_name, e.image_url,
+              e.attendee_limit, e.attendee_count,
+              e.is_free, e.price, e.status, e.created_at,
+              COALESCE(json_agg(DISTINCT s.name) FILTER (WHERE s.name IS NOT NULL), '[]') AS skills
+       FROM events e
+       LEFT JOIN event_skills es ON es.event_id = e.id
+       LEFT JOIN skills s ON s.id = es.skill_id
+       WHERE e.organizer_id = $1
+       GROUP BY e.id
+       ORDER BY e.created_at DESC`,
+      [req.user.id]
+    );
+    return success(res, rows);
+  } catch (err) {
+    next(err);
+  }
+}
+
 async function getEvent(req, res, next) {
   try {
     const { id } = req.params;
@@ -182,4 +205,4 @@ async function createEvent(req, res, next) {
   }
 }
 
-module.exports = { listEvents, getEvent, rsvpEvent, checkIn, createEvent };
+module.exports = { listEvents, getMyEvents, getEvent, rsvpEvent, checkIn, createEvent };

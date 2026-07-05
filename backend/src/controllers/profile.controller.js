@@ -1,5 +1,5 @@
 const { query, getClient } = require("../config/database");
-const { success, notFound, forbidden } = require("../utils/response.util");
+const { success, notFound, forbidden, badRequest } = require("../utils/response.util");
 const { checkAndAwardBadge } = require("../services/badge.service");
 
 async function getPublicProfile(req, res, next) {
@@ -128,7 +128,7 @@ async function getEmployerProfile(req, res, next) {
               ep.total_jobs_posted, ep.total_hired
        FROM users u
        JOIN employer_profiles ep ON ep.user_id = u.id
-       WHERE u.id = $1 AND u.role = 'employer'`,
+       WHERE u.id = $1 AND u.role IN ('employer', 'event_organizer')`,
       [userId]
     );
     if (!rows[0]) return notFound(res, "Employer not found");
@@ -141,7 +141,7 @@ async function getEmployerProfile(req, res, next) {
 async function updateEmployerProfile(req, res, next) {
   try {
     const userId = req.user.id;
-    if (req.user.role !== "employer") return forbidden(res);
+    if (req.user.role !== "employer" && req.user.role !== "event_organizer") return forbidden(res);
     const { company_name, industry, company_description, website_url, location } = req.body;
     const updates = [];
     const params = [];
@@ -160,4 +160,29 @@ async function updateEmployerProfile(req, res, next) {
   }
 }
 
-module.exports = { getPublicProfile, updateProfile, getEmployerProfile, updateEmployerProfile };
+async function uploadProfilePhoto(req, res, next) {
+  try {
+    if (!req.file) return badRequest(res, "No photo uploaded");
+
+    const url = `/uploads/${req.file.filename}`;
+    const userId = req.user.id;
+
+    if (req.user.role === "employer" || req.user.role === "event_organizer") {
+      await query(
+        "UPDATE employer_profiles SET company_logo_url = $1, updated_at = NOW() WHERE user_id = $2",
+        [url, userId]
+      );
+    } else {
+      await query(
+        "UPDATE freelancer_profiles SET profile_picture_url = $1, updated_at = NOW() WHERE user_id = $2",
+        [url, userId]
+      );
+    }
+
+    return success(res, { url }, "Photo uploaded");
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { getPublicProfile, updateProfile, getEmployerProfile, updateEmployerProfile, uploadProfilePhoto };

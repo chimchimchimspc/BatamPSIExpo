@@ -79,6 +79,30 @@ async function listJobs(req, res, next) {
   }
 }
 
+async function getMyJobs(req, res, next) {
+  try {
+    const { rows } = await query(
+      `SELECT jp.id, jp.title, jc.name AS category, jp.description,
+              jp.budget_min, jp.budget_max, jp.budget_type,
+              jp.deadline_days, jp.deadline_date,
+              jp.location, jp.location_type, jp.experience_level,
+              jp.status, jp.view_count, jp.application_count, jp.created_at,
+              COALESCE(json_agg(DISTINCT s.name) FILTER (WHERE s.name IS NOT NULL), '[]') AS skills
+       FROM job_postings jp
+       LEFT JOIN job_categories jc ON jc.id = jp.category_id
+       LEFT JOIN job_skills js ON js.job_id = jp.id
+       LEFT JOIN skills s ON s.id = js.skill_id
+       WHERE jp.employer_id = $1
+       GROUP BY jp.id, jc.name
+       ORDER BY jp.created_at DESC`,
+      [req.user.id]
+    );
+    return success(res, rows);
+  } catch (err) {
+    next(err);
+  }
+}
+
 async function getJob(req, res, next) {
   try {
     const { id } = req.params;
@@ -90,19 +114,21 @@ async function getJob(req, res, next) {
               jc.name AS category, jp.description,
               jp.budget_min, jp.budget_max, jp.budget_type,
               jp.deadline_days, jp.deadline_date,
-              jp.location, jp.location_type, jp.experience_level,
+              jp.location, jp.latitude, jp.longitude,
+              jp.location_type, jp.experience_level,
               jp.contact_whatsapp, jp.contact_email,
               jp.view_count, jp.application_count,
               jp.status, jp.created_at,
               COALESCE(json_agg(DISTINCT s.name) FILTER (WHERE s.name IS NOT NULL), '[]') AS skills,
-              COALESCE(json_agg(DISTINCT jr.requirement ORDER BY jr.order_index)
-                FILTER (WHERE jr.requirement IS NOT NULL), '[]') AS requirements
+              COALESCE((
+                SELECT json_agg(jr.requirement ORDER BY jr.order_index)
+                FROM job_requirements jr WHERE jr.job_id = jp.id
+              ), '[]') AS requirements
        FROM job_postings jp
        LEFT JOIN job_categories jc ON jc.id = jp.category_id
        LEFT JOIN employer_profiles ep ON ep.user_id = jp.employer_id
        LEFT JOIN job_skills js ON js.job_id = jp.id
        LEFT JOIN skills s ON s.id = js.skill_id
-       LEFT JOIN job_requirements jr ON jr.job_id = jp.id
        WHERE jp.id = $1
        GROUP BY jp.id, ep.company_name, jc.name`,
       [id]
@@ -241,4 +267,4 @@ async function deleteJob(req, res, next) {
   }
 }
 
-module.exports = { listJobs, getJob, createJob, updateJob, deleteJob };
+module.exports = { listJobs, getMyJobs, getJob, createJob, updateJob, deleteJob };

@@ -4,6 +4,7 @@ const c = require("../controllers/events.controller");
 const { authenticate, requireRole } = require("../middleware/auth.middleware");
 
 router.get("/",                   c.listEvents);
+router.get("/mine",               authenticate, requireRole("admin", "employer", "event_organizer"), c.getMyEvents);
 router.get("/:id",                c.getEvent);
 router.post("/",                  authenticate, requireRole("admin", "employer", "event_organizer"), c.createEvent);
 router.post("/:id/rsvp",          authenticate, c.rsvpEvent);

@@ -54,7 +54,13 @@ async function register({ email, password, full_name, role = "freelancer", city 
 
 async function login({ email, password }) {
   const { rows } = await query(
-    "SELECT id, email, full_name, role, password_hash, is_verified FROM users WHERE email = $1",
+    `SELECT u.id, u.email, u.full_name, u.role, u.password_hash, u.is_verified,
+            COALESCE(fp.profile_picture_url, ep.company_logo_url) AS profile_picture_url,
+            fp.level, fp.passport_days_completed
+     FROM users u
+     LEFT JOIN freelancer_profiles fp ON fp.user_id = u.id
+     LEFT JOIN employer_profiles ep ON ep.user_id = u.id
+     WHERE u.email = $1`,
     [email]
   );
 
