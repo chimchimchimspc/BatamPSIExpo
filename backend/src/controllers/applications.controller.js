@@ -122,11 +122,11 @@ async function getApplicationsForJob(req, res, next) {
 
 async function getEmployerApplications(req, res, next) {
   try {
-    const limit = Math.min(parseInt(req.query.limit) || 10, 50);
+    const limit = Math.min(parseInt(req.query.limit) || 10, 100);
     const { rows } = await query(
-      `SELECT a.id, a.status, a.submitted_at,
+      `SELECT a.id, a.status, a.submitted_at, a.cover_letter,
               u.id AS freelancer_id, u.full_name AS name,
-              fp.level, fp.rating, fp.profile_picture_url,
+              fp.level, fp.rating, fp.completed_projects, fp.profile_picture_url,
               jp.id AS job_id, jp.title AS job_title
        FROM applications a
        JOIN job_postings jp ON jp.id = a.job_id
