@@ -37,7 +37,12 @@
       "PowerShell(& 'C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe' -U postgres -c \"CREATE DATABASE jogja_freelance_db;\")",
       "PowerShell(& 'C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe' -U postgres -d jogja_freelance_db -f \"F:\\\\EXPO PSI\\\\backend\\\\database\\\\schema.sql\")",
       "Bash(NEXT_EXPERIMENTAL_USE_SWC=true npm run dev)",
-      "Bash(curl *)"
+      "Bash(curl *)",
+      "Bash(node -e \"console.log\\(require\\('bcryptjs'\\).hashSync\\('Test@12345', 12\\)\\)\")",
+      "Bash(export PGPASSWORD=daffa561)",
+      "Bash('C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe' -U postgres -h localhost -d jogja_freelance_db -c ' *)",
+      "Bash(\"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U postgres -h localhost -d jogja_freelance_db -t -c \"SELECT column_name FROM information_schema.columns WHERE table_name='reviews' ORDER BY ordinal_position;\")",
+      "Bash(\"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U postgres -h localhost -d jogja_freelance_db -t -c \"SELECT unnest\\(enum_range\\(NULL::application_status\\)\\);\")"
     ]
   }
 }

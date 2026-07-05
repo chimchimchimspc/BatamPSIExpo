@@ -33,4 +33,14 @@ async function uploadPortfolio(req, res, next) {
   }
 }
 
-module.exports = { uploadAvatar, uploadPortfolio };
+// Upload gambar generik (lowongan/event) — hanya menyimpan file, kembalikan URL relatif
+async function uploadImage(req, res, next) {
+  try {
+    if (!req.file) return badRequest(res, "No image uploaded");
+    return success(res, { url: `/uploads/${req.file.filename}` }, "Image uploaded");
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { uploadAvatar, uploadPortfolio, uploadImage };

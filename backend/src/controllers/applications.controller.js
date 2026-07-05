@@ -147,7 +147,7 @@ async function updateApplicationStatus(req, res, next) {
   try {
     const { id } = req.params;
     const { status } = req.body;
-    const allowed = ["reviewed", "accepted", "rejected"];
+    const allowed = ["reviewed", "accepted", "rejected", "completed"];
     if (!allowed.includes(status)) return badRequest(res, "Invalid status");
 
     const appRes = await query(
@@ -159,6 +159,11 @@ async function updateApplicationStatus(req, res, next) {
       return forbidden(res);
     }
 
+    // Pekerjaan hanya bisa ditandai selesai setelah pelamar diterima
+    if (status === "completed" && appRes.rows[0].status !== "accepted") {
+      return badRequest(res, "Pelamar harus diterima dulu sebelum pekerjaan ditandai selesai");
+    }
+
     const { rows } = await query(
       `UPDATE applications
        SET status = $1, reviewed_at = NOW()
@@ -168,9 +173,23 @@ async function updateApplicationStatus(req, res, next) {
     );
 
     const app = appRes.rows[0];
+
+    if (status === "completed") {
+      // Tambah hitungan proyek selesai di profil freelancer & total hired employer
+      await query(
+        "UPDATE freelancer_profiles SET completed_projects = completed_projects + 1, updated_at = NOW() WHERE user_id = $1",
+        [app.freelancer_id]
+      );
+      await query(
+        "UPDATE employer_profiles SET total_hired = total_hired + 1 WHERE user_id = $1",
+        [req.user.id]
+      );
+    }
+
     const msgMap = {
       accepted: "Selamat! Lamaran kamu diterima!",
       rejected: "Terima kasih telah melamar. Kali ini kami belum bisa menerima lamaran kamu.",
+      completed: "Pekerjaanmu telah ditandai selesai oleh employer! Cek ulasan barunya di profilmu 🎉",
     };
     if (msgMap[status]) {
       await query(

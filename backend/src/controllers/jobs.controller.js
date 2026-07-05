@@ -1,6 +1,7 @@
 const { query, getClient } = require("../config/database");
 const { success, created, notFound, forbidden, paginated } = require("../utils/response.util");
 const { sendJobMatchNotifications } = require("../services/notification.service");
+const { trackView } = require("../services/preference.service");
 
 async function listJobs(req, res, next) {
   try {
@@ -53,6 +54,7 @@ async function listJobs(req, res, next) {
 
     const { rows } = await query(
       `SELECT jp.id, jp.title, ep.company_name AS company,
+              ep.company_logo_url AS company_logo,
               jc.name AS category, jp.description,
               jp.budget_min, jp.budget_max, jp.budget_type,
               jp.deadline_days, jp.deadline_date,
@@ -67,7 +69,7 @@ async function listJobs(req, res, next) {
        LEFT JOIN job_skills js ON js.job_id = jp.id
        LEFT JOIN skills s ON s.id = js.skill_id
        ${where}
-       GROUP BY jp.id, ep.company_name, jc.name
+       GROUP BY jp.id, ep.company_name, ep.company_logo_url, jc.name
        ORDER BY ${orderBy}
        LIMIT $${idx} OFFSET $${idx + 1}`,
       [...params, limit, offset]
@@ -110,11 +112,12 @@ async function getJob(req, res, next) {
     await query("UPDATE job_postings SET view_count = view_count + 1 WHERE id = $1", [id]);
 
     const { rows } = await query(
-      `SELECT jp.id, jp.title, ep.company_name AS company,
+      `SELECT jp.id, jp.title, jp.employer_id, ep.company_name AS company,
+              ep.company_logo_url AS company_logo, ep.industry AS company_industry,
               jc.name AS category, jp.description,
               jp.budget_min, jp.budget_max, jp.budget_type,
               jp.deadline_days, jp.deadline_date,
-              jp.location, jp.latitude, jp.longitude,
+              jp.location, jp.latitude, jp.longitude, jp.image_url,
               jp.location_type, jp.experience_level,
               jp.contact_whatsapp, jp.contact_email,
               jp.view_count, jp.application_count,
@@ -130,11 +133,17 @@ async function getJob(req, res, next) {
        LEFT JOIN job_skills js ON js.job_id = jp.id
        LEFT JOIN skills s ON s.id = js.skill_id
        WHERE jp.id = $1
-       GROUP BY jp.id, ep.company_name, jc.name`,
+       GROUP BY jp.id, ep.company_name, ep.company_logo_url, ep.industry, jc.name`,
       [id]
     );
 
     if (!rows[0]) return notFound(res, "Job not found");
+
+    // Catat minat: freelancer login membuka lowongan kategori ini
+    if (req.user?.role === "freelancer" && rows[0].category) {
+      trackView(req.user.id, "job_category", rows[0].category);
+    }
+
     return success(res, rows[0]);
   } catch (err) {
     next(err);
@@ -147,7 +156,8 @@ async function createJob(req, res, next) {
       title, category, category_id, description,
       budget_min, budget_max, budget_type,
       deadline_days, deadline_date,
-      location, location_type, experience_level,
+      location, latitude, longitude, image_url,
+      location_type, experience_level,
       contact_whatsapp, contact_email,
       skills = [], requirements = [],
     } = req.body;
@@ -168,13 +178,13 @@ async function createJob(req, res, next) {
       const { rows } = await client.query(
         `INSERT INTO job_postings
            (employer_id, title, category_id, description, budget_min, budget_max, budget_type,
-            deadline_days, deadline_date, location, location_type, experience_level,
-            contact_whatsapp, contact_email, status)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,'pending_review')
+            deadline_days, deadline_date, location, latitude, longitude, image_url,
+            location_type, experience_level, contact_whatsapp, contact_email, status)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,'pending_review')
          RETURNING *`,
         [req.user.id, title, resolvedCategoryId, description, budget_min, budget_max, budget_type,
-         deadline_days, resolvedDeadlineDate, location, location_type, experience_level,
-         contact_whatsapp, contact_email]
+         deadline_days, resolvedDeadlineDate, location, latitude || null, longitude || null, image_url || null,
+         location_type, experience_level, contact_whatsapp, contact_email]
       );
       const job = rows[0];
 

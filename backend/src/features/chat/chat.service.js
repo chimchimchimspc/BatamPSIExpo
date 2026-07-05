@@ -72,7 +72,12 @@ async function sendMessage({ conversationId, senderId, body }) {
 async function listConversations(userId) {
   const { rows } = await query(
     `SELECT c.id, c.created_at, c.updated_at,
-            other.id AS other_user_id, other.full_name AS other_user_name,
+            other.id AS other_user_id,
+            CASE
+              WHEN other.role IN ('employer', 'event_organizer') AND ep.company_name IS NOT NULL
+              THEN other.full_name || ' (' || ep.company_name || ')'
+              ELSE other.full_name
+            END AS other_user_name,
             COALESCE(fp.profile_picture_url, ep.company_logo_url) AS other_user_avatar,
             lm.body AS last_message, lm.created_at AS last_message_at,
             (SELECT COUNT(*)::int FROM messages m

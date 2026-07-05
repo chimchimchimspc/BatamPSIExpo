@@ -16,6 +16,20 @@ function authenticate(req, res, next) {
   }
 }
 
+// Seperti authenticate, tapi tidak wajib — dipakai route publik
+// yang ingin tahu siapa yang mengakses (mis. pelacak minat)
+function optionalAuth(req, res, next) {
+  const header = req.headers.authorization;
+  if (header && header.startsWith("Bearer ")) {
+    try {
+      req.user = verifyToken(header.split(" ")[1]);
+    } catch {
+      // token invalid → perlakukan sebagai tamu
+    }
+  }
+  next();
+}
+
 function requireRole(...roles) {
   return (req, res, next) => {
     if (!req.user) return unauthorized(res);
@@ -26,4 +40,4 @@ function requireRole(...roles) {
   };
 }
 
-module.exports = { authenticate, requireRole };
+module.exports = { authenticate, optionalAuth, requireRole };

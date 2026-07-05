@@ -1,6 +1,7 @@
 const { query, getClient } = require("../config/database");
 const { success, created, notFound, badRequest, forbidden, paginated } = require("../utils/response.util");
 const { checkAndAwardBadge } = require("../services/badge.service");
+const { trackView } = require("../services/preference.service");
 
 async function listEvents(req, res, next) {
   try {
@@ -69,16 +70,23 @@ async function getEvent(req, res, next) {
     const { id } = req.params;
     const { rows } = await query(
       `SELECT e.*, ep.company_name AS organizer_company,
+              ep.company_logo_url AS organizer_logo, ep.industry AS organizer_industry,
               COALESCE(json_agg(DISTINCT s.name) FILTER (WHERE s.name IS NOT NULL), '[]') AS skills
        FROM events e
        LEFT JOIN employer_profiles ep ON ep.user_id = e.organizer_id
        LEFT JOIN event_skills es ON es.event_id = e.id
        LEFT JOIN skills s ON s.id = es.skill_id
        WHERE e.id = $1
-       GROUP BY e.id, ep.company_name`,
+       GROUP BY e.id, ep.company_name, ep.company_logo_url, ep.industry`,
       [id]
     );
     if (!rows[0]) return notFound(res, "Event not found");
+
+    // Catat minat: freelancer login membuka event tipe ini
+    if (req.user?.role === "freelancer" && rows[0].type) {
+      trackView(req.user.id, "event_type", rows[0].type);
+    }
+
     return success(res, rows[0]);
   } catch (err) {
     next(err);
@@ -147,6 +155,24 @@ async function checkIn(req, res, next) {
     );
 
     return success(res, { ...rows[0], awardedBadge }, "Check-in successful!");
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Event yang diikuti user (RSVP / check-in) — untuk portofolio freelancer
+async function getMyAttendedEvents(req, res, next) {
+  try {
+    const { rows } = await query(
+      `SELECT e.id, e.title, e.type, e.event_date, e.location_name,
+              e.organizer_name, ea.checked_in, ea.rsvp_at
+       FROM event_attendance ea
+       JOIN events e ON e.id = ea.event_id
+       WHERE ea.user_id = $1
+       ORDER BY e.event_date DESC`,
+      [req.user.id]
+    );
+    return success(res, rows);
   } catch (err) {
     next(err);
   }
@@ -231,4 +257,4 @@ async function createEvent(req, res, next) {
   }
 }
 
-module.exports = { listEvents, getMyEvents, getEvent, getEventAttendees, rsvpEvent, checkIn, createEvent };
+module.exports = { listEvents, getMyEvents, getMyAttendedEvents, getEvent, getEventAttendees, rsvpEvent, checkIn, createEvent };

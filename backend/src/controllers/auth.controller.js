@@ -50,6 +50,21 @@ async function login(req, res, next) {
   }
 }
 
+async function googleLogin(req, res, next) {
+  try {
+    const { credential, email, name } = req.body;
+    if (!credential && !email) {
+      return error(res, "credential (token Google) atau email diperlukan", 400);
+    }
+    const result = await authService.googleLogin({ credential, email, name });
+    attachSession(req, result.user);
+    return success(res, result, "Login successful");
+  } catch (err) {
+    if (err.statusCode) return error(res, err.message, err.statusCode);
+    next(err);
+  }
+}
+
 async function me(req, res, next) {
   try {
     const user = await authService.getMe(req.user.id);
@@ -71,4 +86,4 @@ async function logout(req, res) {
   return success(res, null, "Logged out successfully");
 }
 
-module.exports = { register, registerRules, login, loginRules, me, logout, validate };
+module.exports = { register, registerRules, login, loginRules, googleLogin, me, logout, validate };

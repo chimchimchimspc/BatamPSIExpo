@@ -9,6 +9,7 @@ router.use("/passport",      require("./passport.routes"));
 router.use("/badges",        require("./badges.routes"));
 router.use("/events",        require("./events.routes"));
 router.use("/notifications", require("./notifications.routes"));
+router.use("/recommendations", require("./recommendations.routes"));
 router.use("/admin",         require("./admin.routes"));
 
 // Feature modules (self-contained, per-feature folders under src/features/)
