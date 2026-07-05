@@ -5,6 +5,7 @@ const cors = require("cors");
 const helmet = require("helmet");
 const { globalLimiter } = require("./middleware/rateLimiter.middleware");
 const { errorHandler } = require("./middleware/error.middleware");
+const { sessionMiddleware } = require("./features/session/session.config");
 const routes = require("./routes/index");
 
 const app = express();
@@ -26,6 +27,10 @@ app.use("/uploads", express.static(path.join(__dirname, "../uploads"), {
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(globalLimiter);
+
+// Server-side session (PostgreSQL-backed). Enables per-feature session storage.
+app.set("trust proxy", 1);
+app.use(sessionMiddleware);
 
 app.get("/health", (req, res) => {
   res.json({ status: "OK", timestamp: new Date().toISOString() });

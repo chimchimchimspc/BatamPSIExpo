@@ -17,9 +17,22 @@ const loginRules = [
   body("password").notEmpty(),
 ];
 
+function attachSession(req, user) {
+  // Establish a server-side session alongside the JWT.
+  if (req.session) {
+    req.session.user = {
+      id: user.id,
+      email: user.email,
+      name: user.full_name,
+      role: user.role,
+    };
+  }
+}
+
 async function register(req, res, next) {
   try {
     const result = await authService.register(req.body);
+    attachSession(req, result.user);
     return created(res, result, "Registration successful");
   } catch (err) {
     next(err);
@@ -29,6 +42,7 @@ async function register(req, res, next) {
 async function login(req, res, next) {
   try {
     const result = await authService.login(req.body);
+    attachSession(req, result.user);
     return success(res, result, "Login successful");
   } catch (err) {
     if (err.statusCode === 401) return error(res, err.message, 401);
@@ -47,6 +61,13 @@ async function me(req, res, next) {
 }
 
 async function logout(req, res) {
+  if (req.session) {
+    req.session.destroy(() => {
+      res.clearCookie("jfp.sid");
+      return success(res, null, "Logged out successfully");
+    });
+    return;
+  }
   return success(res, null, "Logged out successfully");
 }
 

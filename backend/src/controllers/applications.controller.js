@@ -55,6 +55,7 @@ async function getMyApplications(req, res, next) {
       `SELECT a.id, a.status, a.submitted_at, a.reviewed_at, a.expires_at,
               a.cover_letter,
               jp.id AS job_id, jp.title AS job_title,
+              jp.employer_id AS employer_id,
               ep.company_name AS company,
               jc.name AS category,
               jp.budget_min, jp.budget_max
