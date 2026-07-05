@@ -6,6 +6,7 @@ const { loginLimiter } = require("../middleware/rateLimiter.middleware");
 
 router.post("/register", c.registerRules, c.validate, c.register);
 router.post("/login",    loginLimiter, c.loginRules, c.validate, c.login);
+router.post("/google",   loginLimiter, c.googleRules, c.validate, c.googleLogin);
 router.post("/logout",   authenticate, c.logout);
 router.get("/me",        authenticate, c.me);
 

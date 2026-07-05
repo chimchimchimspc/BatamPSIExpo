@@ -16,6 +16,10 @@ const loginRules = [
   body("password").notEmpty(),
 ];
 
+const googleRules = [
+  body("credential").notEmpty().withMessage("Google credential required"),
+];
+
 async function register(req, res, next) {
   try {
     const result = await authService.register(req.body);
@@ -35,6 +39,16 @@ async function login(req, res, next) {
   }
 }
 
+async function googleLogin(req, res, next) {
+  try {
+    const result = await authService.loginWithGoogle(req.body);
+    return success(res, result, "Google login successful");
+  } catch (err) {
+    if (err.statusCode === 400) return error(res, err.message, 400);
+    next(err);
+  }
+}
+
 async function me(req, res, next) {
   try {
     const user = await authService.getMe(req.user.id);
@@ -49,4 +63,4 @@ async function logout(req, res) {
   return success(res, null, "Logged out successfully");
 }
 
-module.exports = { register, registerRules, login, loginRules, me, logout, validate };
+module.exports = { register, registerRules, login, loginRules, googleLogin, googleRules, me, logout, validate };

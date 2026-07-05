@@ -1,6 +1,6 @@
 const bcrypt = require("bcryptjs");
 const { query, getClient } = require("../config/database");
-const { signToken, signRefreshToken } = require("../utils/jwt.util");
+const { signToken, signRefreshToken, decodeToken } = require("../utils/jwt.util");
 
 async function register({ email, password, full_name, role = "freelancer", city = "Yogyakarta" }) {
   const exists = await query("SELECT id FROM users WHERE email = $1", [email]);
@@ -81,6 +81,77 @@ async function login({ email, password }) {
   return { user: safeUser, token, refreshToken };
 }
 
+// Sign in / sign up with a Google ID token (credential from Google Identity Services).
+// NOTE: For a real deployment the credential should be verified with google-auth-library
+// against your Google Client ID. Here we only decode it (demo-grade), matching the
+// existing client-side decode flow. Do NOT trust this in production.
+async function loginWithGoogle({ credential }) {
+  const payload = decodeToken(credential);
+  if (!payload || !payload.email) {
+    const err = new Error("Invalid Google credential");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const google_id = payload.sub;
+  const email = String(payload.email).toLowerCase();
+  const full_name = payload.name || email.split("@")[0];
+  const avatar_url = payload.picture || null;
+
+  // Existing user? Match by google_id or email.
+  const existing = await query(
+    "SELECT id, email, full_name, role, avatar_url FROM users WHERE google_id = $1 OR email = $2",
+    [google_id, email]
+  );
+
+  if (existing.rowCount > 0) {
+    const found = existing.rows[0];
+    // Backfill google_id / avatar and update last login for returning users.
+    const { rows } = await query(
+      `UPDATE users
+         SET google_id = COALESCE(google_id, $1),
+             avatar_url = COALESCE($2, avatar_url),
+             last_login = NOW()
+       WHERE id = $3
+       RETURNING id, email, full_name, role, avatar_url`,
+      [google_id, avatar_url, found.id]
+    );
+    const user = rows[0];
+    const token = signToken({ id: user.id, role: user.role, email: user.email });
+    return { user: { ...user, avatar: user.avatar_url }, token };
+  }
+
+  // New user — create as a freelancer with supporting rows, in a transaction.
+  const client = await getClient();
+  try {
+    await client.query("BEGIN");
+
+    const { rows } = await client.query(
+      `INSERT INTO users (email, full_name, role, google_id, avatar_url, is_email_verified, last_login)
+       VALUES ($1, $2, 'freelancer', $3, $4, TRUE, NOW())
+       RETURNING id, email, full_name, role, avatar_url`,
+      [email, full_name, google_id, avatar_url]
+    );
+    const user = rows[0];
+
+    await client.query(
+      "INSERT INTO freelancer_profiles (user_id, profile_picture_url) VALUES ($1, $2)",
+      [user.id, avatar_url]
+    );
+    await client.query("INSERT INTO passport_progress (user_id) VALUES ($1)", [user.id]);
+
+    await client.query("COMMIT");
+
+    const token = signToken({ id: user.id, role: user.role, email: user.email });
+    return { user: { ...user, avatar: user.avatar_url }, token };
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
 async function getMe(userId) {
   const { rows } = await query(
     `SELECT u.id, u.email, u.full_name, u.role, u.city, u.is_verified, u.created_at,
@@ -94,4 +165,4 @@ async function getMe(userId) {
   return rows[0] || null;
 }
 
-module.exports = { register, login, getMe };
+module.exports = { register, login, loginWithGoogle, getMe };

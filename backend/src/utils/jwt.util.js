@@ -16,4 +16,10 @@ function verifyToken(token) {
   return jwt.verify(token, SECRET);
 }
 
-module.exports = { signToken, signRefreshToken, verifyToken };
+// Decode a JWT payload WITHOUT verifying the signature.
+// Used for Google ID tokens (demo-grade — see auth.service.loginWithGoogle note).
+function decodeToken(token) {
+  return jwt.decode(token);
+}
+
+module.exports = { signToken, signRefreshToken, verifyToken, decodeToken };
