@@ -10,7 +10,7 @@ const sendRules = [
 
 async function startConversation(req, res, next) {
   try {
-    const convo = await chatService.getOrCreateConversation(req.user.id, req.body.user_id);
+    const convo = await chatService.getOrCreateConversation(req.user.id, req.body.user_id, req.user.role);
     return created(res, convo, "Conversation ready");
   } catch (err) {
     next(err);

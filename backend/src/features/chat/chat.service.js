@@ -5,7 +5,7 @@ function orderPair(a, b) {
   return a < b ? [a, b] : [b, a];
 }
 
-async function getOrCreateConversation(meId, otherId) {
+async function getOrCreateConversation(meId, otherId, meRole) {
   if (meId === otherId) {
     const err = new Error("Cannot start a conversation with yourself");
     err.statusCode = 400;
@@ -20,6 +20,21 @@ async function getOrCreateConversation(meId, otherId) {
   }
 
   const [user_a, user_b] = orderPair(meId, otherId);
+
+  // Freelancer hanya bisa membalas: percakapan baru harus dimulai
+  // oleh pengelola lowongan / event (atau admin)
+  if (meRole === "freelancer") {
+    const existing = await query(
+      "SELECT id, user_a, user_b, created_at FROM conversations WHERE user_a = $1 AND user_b = $2",
+      [user_a, user_b]
+    );
+    if (existing.rowCount === 0) {
+      const err = new Error("Tunggu pengelola lowongan/event menghubungi Anda terlebih dahulu");
+      err.statusCode = 403;
+      throw err;
+    }
+    return existing.rows[0];
+  }
   const { rows } = await query(
     `INSERT INTO conversations (user_a, user_b)
      VALUES ($1, $2)

@@ -152,6 +152,32 @@ async function checkIn(req, res, next) {
   }
 }
 
+async function getEventAttendees(req, res, next) {
+  try {
+    const { id } = req.params;
+    const event = await query("SELECT organizer_id, title FROM events WHERE id = $1", [id]);
+    if (!event.rows[0]) return notFound(res, "Event not found");
+    if (event.rows[0].organizer_id !== req.user.id && req.user.role !== "admin") {
+      return forbidden(res);
+    }
+
+    const { rows } = await query(
+      `SELECT ea.id, ea.rsvp_at, ea.checked_in, ea.checked_in_at,
+              u.id AS user_id, u.full_name AS name, u.city,
+              fp.level, fp.profile_picture_url
+       FROM event_attendance ea
+       JOIN users u ON u.id = ea.user_id
+       LEFT JOIN freelancer_profiles fp ON fp.user_id = u.id
+       WHERE ea.event_id = $1
+       ORDER BY ea.rsvp_at DESC`,
+      [id]
+    );
+    return success(res, { event_title: event.rows[0].title, attendees: rows });
+  } catch (err) {
+    next(err);
+  }
+}
+
 async function createEvent(req, res, next) {
   try {
     const {
@@ -205,4 +231,4 @@ async function createEvent(req, res, next) {
   }
 }
 
-module.exports = { listEvents, getMyEvents, getEvent, rsvpEvent, checkIn, createEvent };
+module.exports = { listEvents, getMyEvents, getEvent, getEventAttendees, rsvpEvent, checkIn, createEvent };
