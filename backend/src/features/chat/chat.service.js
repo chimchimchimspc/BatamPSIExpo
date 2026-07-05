@@ -73,13 +73,14 @@ async function listConversations(userId) {
   const { rows } = await query(
     `SELECT c.id, c.created_at, c.updated_at,
             other.id AS other_user_id, other.full_name AS other_user_name,
-            fp.profile_picture_url AS other_user_avatar,
+            COALESCE(fp.profile_picture_url, ep.company_logo_url) AS other_user_avatar,
             lm.body AS last_message, lm.created_at AS last_message_at,
             (SELECT COUNT(*)::int FROM messages m
               WHERE m.conversation_id = c.id AND m.sender_id <> $1 AND m.is_read = FALSE) AS unread_count
      FROM conversations c
      JOIN users other ON other.id = CASE WHEN c.user_a = $1 THEN c.user_b ELSE c.user_a END
      LEFT JOIN freelancer_profiles fp ON fp.user_id = other.id
+     LEFT JOIN employer_profiles ep ON ep.user_id = other.id
      LEFT JOIN LATERAL (
        SELECT body, created_at FROM messages
        WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1
