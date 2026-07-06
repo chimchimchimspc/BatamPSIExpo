@@ -42,7 +42,15 @@
       "Bash(export PGPASSWORD=daffa561)",
       "Bash('C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe' -U postgres -h localhost -d jogja_freelance_db -c ' *)",
       "Bash(\"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U postgres -h localhost -d jogja_freelance_db -t -c \"SELECT column_name FROM information_schema.columns WHERE table_name='reviews' ORDER BY ordinal_position;\")",
-      "Bash(\"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U postgres -h localhost -d jogja_freelance_db -t -c \"SELECT unnest\\(enum_range\\(NULL::application_status\\)\\);\")"
+      "Bash(\"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U postgres -h localhost -d jogja_freelance_db -t -c \"SELECT unnest\\(enum_range\\(NULL::application_status\\)\\);\")",
+      "Bash(\"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U postgres -h localhost -d jogja_freelance_db -f \"F:\\\\EXPO PSI\\\\backend\\\\database\\\\updates.sql\")",
+      "Bash(sed -i 's/text-\\\\[#E8B4D1\\\\]/text-[#D64545]/g' app/profile/page.tsx app/components/profile/ProfileHeader.tsx app/components/profile/BadgeGrid.tsx)",
+      "Bash(sed -i 's/text-\\\\[#EC7211\\\\]/text-[#D64545]/g' app/profile/page.tsx)",
+      "Bash(sed -i 's/bg-\\\\[#E8B4D1\\\\] text-white/bg-[#D64545] text-white/g' app/jobs/applications/page.tsx)",
+      "Bash(grep -rn \"E8B4D1\\\\|EC7211\" app/profile/page.tsx app/components/profile/ProfileHeader.tsx app/components/profile/BadgeGrid.tsx app/jobs/applications/page.tsx)",
+      "Bash(\"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U postgres -h localhost -d jogja_freelance_db -t -A -c \"SELECT jp.id FROM job_postings jp JOIN users u ON u.id=jp.employer_id WHERE u.email='employer@example.com' AND jp.status='active' LIMIT 1;\")",
+      "Bash(\"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U postgres -h localhost -d jogja_freelance_db -t -A -c \"SELECT id FROM events WHERE title='Meetup Freelancer Jogja';\")",
+      "Bash(\"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U postgres -h localhost -d jogja_freelance_db)"
     ]
   }
 }

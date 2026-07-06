@@ -62,3 +62,7 @@ CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id
 -- * Password hash admin & freelancer di seed.sql lama tidak valid — reset via:
 --     node -e "console.log(require('bcryptjs').hashSync('PasswordBaru', 12))"
 --     lalu UPDATE users SET password_hash='<hash>' WHERE email='...';
+
+-- ---- Badge langsung aktif tanpa verifikasi admin ----
+UPDATE user_badges SET is_active = TRUE WHERE is_active = FALSE;
+UPDATE badges SET requires_admin_verification = FALSE WHERE requires_admin_verification = TRUE;

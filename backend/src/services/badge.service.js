@@ -15,13 +15,12 @@ async function checkAndAwardBadge(userId, triggerCondition) {
   );
   if (exists.rowCount > 0) return null;
 
-  const isVerified = !badge.requires_admin_verification;
-
+  // Badge langsung aktif begitu diraih — tanpa menunggu verifikasi admin
   const { rows } = await query(
     `INSERT INTO user_badges (user_id, badge_id, is_active)
-     VALUES ($1, $2, $3)
+     VALUES ($1, $2, TRUE)
      RETURNING id, earned_at`,
-    [userId, badge.id, isVerified]
+    [userId, badge.id]
   );
 
   await query(

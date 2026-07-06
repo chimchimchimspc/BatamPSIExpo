@@ -165,9 +165,11 @@ async function getMyAttendedEvents(req, res, next) {
   try {
     const { rows } = await query(
       `SELECT e.id, e.title, e.type, e.event_date, e.location_name,
-              e.organizer_name, ea.checked_in, ea.rsvp_at
+              COALESCE(ep.company_name, e.organizer_name) AS organizer_name,
+              ea.checked_in, ea.rsvp_at
        FROM event_attendance ea
        JOIN events e ON e.id = ea.event_id
+       LEFT JOIN employer_profiles ep ON ep.user_id = e.organizer_id
        WHERE ea.user_id = $1
        ORDER BY e.event_date DESC`,
       [req.user.id]
@@ -204,6 +206,14 @@ async function getEventAttendees(req, res, next) {
   }
 }
 
+// Kode check-in acak 6 karakter (tanpa huruf/angka yang mirip: I, O, 0, 1)
+function generateCheckInCode() {
+  const chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+  let code = "";
+  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
+
 async function createEvent(req, res, next) {
   try {
     const {
@@ -215,6 +225,9 @@ async function createEvent(req, res, next) {
       is_free, price, registration_url,
       skills = [],
     } = req.body;
+
+    // Kode & QR check-in dibuat otomatis bila tidak diisi manual
+    const finalCheckInCode = (check_in_code || "").trim().toUpperCase() || generateCheckInCode();
 
     const client = await getClient();
     try {
@@ -230,7 +243,7 @@ async function createEvent(req, res, next) {
         [title, description, type, event_date, event_time, duration_minutes,
          location_name, location_address, latitude, longitude,
          req.user.id, organizer_name, image_url, attendee_limit,
-         check_in_code, is_free, price, registration_url]
+         finalCheckInCode, is_free, price, registration_url]
       );
       const ev = rows[0];
 

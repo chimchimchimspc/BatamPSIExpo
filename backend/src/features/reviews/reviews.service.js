@@ -44,11 +44,17 @@ async function createReview({ reviewer_id, reviewee_id, job_id = null, rating, c
 async function getReviewsForUser(userId) {
   const { rows } = await query(
     `SELECT r.id, r.rating, r.comment, r.job_id, r.created_at,
-            u.id AS reviewer_id, u.full_name AS reviewer_name,
-            fp.profile_picture_url AS reviewer_avatar
+            u.id AS reviewer_id,
+            CASE
+              WHEN u.role IN ('employer', 'event_organizer') AND ep.company_name IS NOT NULL
+              THEN ep.company_name
+              ELSE u.full_name
+            END AS reviewer_name,
+            COALESCE(fp.profile_picture_url, ep.company_logo_url) AS reviewer_avatar
      FROM reviews r
      JOIN users u ON u.id = r.reviewer_id
      LEFT JOIN freelancer_profiles fp ON fp.user_id = u.id
+     LEFT JOIN employer_profiles ep ON ep.user_id = u.id
      WHERE r.reviewee_id = $1
      ORDER BY r.created_at DESC`,
     [userId]

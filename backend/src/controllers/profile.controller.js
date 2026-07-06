@@ -102,11 +102,12 @@ async function updateProfile(req, res, next) {
   }
 }
 
+// Sesuai misi Hari 1 passport: foto profil + bio + minimal 3 skill
 async function isProfileComplete(userId, client) {
   const db = client || { query: (...a) => query(...a) };
   const { rows } = await db.query(
     `SELECT u.full_name, u.city,
-            fp.bio, fp.portfolio_url,
+            fp.bio, fp.profile_picture_url,
             (SELECT COUNT(*) FROM user_skills us WHERE us.user_id = u.id) AS skill_count
      FROM users u
      LEFT JOIN freelancer_profiles fp ON fp.user_id = u.id
@@ -115,7 +116,7 @@ async function isProfileComplete(userId, client) {
   );
   if (!rows[0]) return false;
   const r = rows[0];
-  return r.full_name && r.city && r.bio && r.portfolio_url && parseInt(r.skill_count) >= 3;
+  return !!(r.full_name && r.city && r.bio && r.profile_picture_url && parseInt(r.skill_count) >= 3);
 }
 
 async function getEmployerProfile(req, res, next) {
