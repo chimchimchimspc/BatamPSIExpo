@@ -178,6 +178,10 @@ async function uploadProfilePhoto(req, res, next) {
         "UPDATE freelancer_profiles SET profile_picture_url = $1, updated_at = NOW() WHERE user_id = $2",
         [url, userId]
       );
+      // Foto bisa jadi syarat terakhir profil lengkap → cek badge
+      if (await isProfileComplete(userId)) {
+        await checkAndAwardBadge(userId, "profile_complete");
+      }
     }
 
     return success(res, { url }, "Photo uploaded");

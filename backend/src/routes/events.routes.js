@@ -11,5 +11,6 @@ router.get("/:id",                optionalAuth, c.getEvent);
 router.post("/",                  authenticate, requireRole("admin", "employer", "event_organizer"), c.createEvent);
 router.post("/:id/rsvp",          authenticate, c.rsvpEvent);
 router.post("/:id/check-in",      authenticate, c.checkIn);
+router.put("/:id/complete",       authenticate, requireRole("admin", "employer", "event_organizer"), c.completeEvent);
 
 module.exports = router;

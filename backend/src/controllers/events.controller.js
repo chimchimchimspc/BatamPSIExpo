@@ -5,21 +5,34 @@ const { trackView } = require("../services/preference.service");
 
 async function listEvents(req, res, next) {
   try {
-    const { page = 1, limit = 20, type, upcoming, past } = req.query;
+    const { page = 1, limit = 20, type, upcoming, past, search } = req.query;
     const offset = (page - 1) * limit;
-    const conditions = ["e.status = 'active'"];
+    // Event yang sudah ditandai selesai oleh pengelola tetap tampil publik
+    // (masuk kategori "Selesai" di sisi freelancer), tidak hilang dari listing.
+    const conditions = ["e.status IN ('active', 'completed')"];
     const params = [];
     let idx = 1;
 
     if (type) { conditions.push(`e.type = $${idx++}`); params.push(type); }
-    if (upcoming === "true") { conditions.push(`e.event_date >= CURRENT_DATE`); }
-    if (past === "true") { conditions.push(`e.event_date < CURRENT_DATE`); }
+    // "Mendatang": belum ditandai selesai DAN tanggalnya belum lewat.
+    // "Selesai": sudah ditandai selesai pengelola ATAU tanggalnya sudah lewat.
+    if (upcoming === "true") {
+      conditions.push(`e.status <> 'completed' AND e.event_date >= CURRENT_DATE`);
+    }
+    if (past === "true") {
+      conditions.push(`(e.status = 'completed' OR e.event_date < CURRENT_DATE)`);
+    }
+    if (search) {
+      conditions.push(`(e.title ILIKE $${idx} OR e.description ILIKE $${idx} OR e.location_name ILIKE $${idx})`);
+      params.push(`%${search}%`);
+      idx++;
+    }
 
     const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
     const total = await query(`SELECT COUNT(*) FROM events e ${where}`, params);
 
     const { rows } = await query(
-      `SELECT e.id, e.title, e.description, e.type,
+      `SELECT e.id, e.title, e.description, e.type, e.status,
               e.event_date, e.event_time, e.duration_minutes,
               e.location_name, e.latitude, e.longitude,
               e.organizer_name, e.image_url,
@@ -119,6 +132,30 @@ async function rsvpEvent(req, res, next) {
 
     if (!rows[0]) return badRequest(res, "Already RSVPd to this event");
     return created(res, rows[0], "RSVP successful");
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Pengelola menandai event miliknya selesai — status berubah jadi 'completed'
+// dan langsung tampil sebagai "Selesai" di sisi freelancer.
+async function completeEvent(req, res, next) {
+  try {
+    const { id } = req.params;
+    const event = await query("SELECT organizer_id, status FROM events WHERE id = $1", [id]);
+    if (!event.rows[0]) return notFound(res, "Event not found");
+    if (event.rows[0].organizer_id !== req.user.id && req.user.role !== "admin") {
+      return forbidden(res);
+    }
+    if (event.rows[0].status !== "active") {
+      return badRequest(res, "Hanya event aktif yang bisa ditandai selesai");
+    }
+
+    const { rows } = await query(
+      "UPDATE events SET status = 'completed', updated_at = NOW() WHERE id = $1 RETURNING id, status",
+      [id]
+    );
+    return success(res, rows[0], "Event ditandai selesai");
   } catch (err) {
     next(err);
   }
@@ -270,4 +307,4 @@ async function createEvent(req, res, next) {
   }
 }
 
-module.exports = { listEvents, getMyEvents, getMyAttendedEvents, getEvent, getEventAttendees, rsvpEvent, checkIn, createEvent };
+module.exports = { listEvents, getMyEvents, getMyAttendedEvents, getEvent, getEventAttendees, rsvpEvent, checkIn, completeEvent, createEvent };
