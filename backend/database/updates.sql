@@ -69,3 +69,12 @@ CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id
 -- ---- Badge langsung aktif tanpa verifikasi admin ----
 UPDATE user_badges SET is_active = TRUE WHERE is_active = FALSE;
 UPDATE badges SET requires_admin_verification = FALSE WHERE requires_admin_verification = TRUE;
+
+-- ---- Alur review hasil kerja: freelancer tandai selesai → employer setujui/
+-- minta revisi/berhentikan ----
+ALTER TYPE application_status ADD VALUE IF NOT EXISTS 'submitted_for_review';
+ALTER TYPE application_status ADD VALUE IF NOT EXISTS 'revision_requested';
+ALTER TYPE application_status ADD VALUE IF NOT EXISTS 'terminated';
+ALTER TABLE applications ADD COLUMN IF NOT EXISTS work_note TEXT;
+ALTER TABLE applications ADD COLUMN IF NOT EXISTS employer_feedback TEXT;
+ALTER TABLE applications ADD COLUMN IF NOT EXISTS work_submitted_at TIMESTAMP;

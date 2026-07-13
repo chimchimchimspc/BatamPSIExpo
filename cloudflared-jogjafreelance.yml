@@ -1,0 +1,9 @@
+tunnel: 3ad5a41b-2f12-463f-b6e4-bbf1a21e7048
+credentials-file: C:\Users\LENOVO LOQ\.cloudflared\3ad5a41b-2f12-463f-b6e4-bbf1a21e7048.json
+
+ingress:
+  - hostname: jogjafreelance.mlakumlaku.site
+    service: http://localhost:3000
+  - hostname: api-jogjafreelance.mlakumlaku.site
+    service: http://localhost:5000
+  - service: http_status:404

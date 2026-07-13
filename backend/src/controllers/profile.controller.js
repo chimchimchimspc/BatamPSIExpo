@@ -1,6 +1,17 @@
 const { query, getClient } = require("../config/database");
 const { success, notFound, forbidden, badRequest } = require("../utils/response.util");
 const { checkAndAwardBadge } = require("../services/badge.service");
+const { setUserSkills } = require("../services/skill.service");
+
+// Daftar skill master (publik) — dipakai form edit profil & register
+async function listSkillOptions(req, res, next) {
+  try {
+    const { rows } = await query("SELECT id, name, category FROM skills ORDER BY name");
+    return success(res, rows);
+  } catch (err) {
+    next(err);
+  }
+}
 
 async function getPublicProfile(req, res, next) {
   try {
@@ -69,18 +80,7 @@ async function updateProfile(req, res, next) {
       }
 
       if (req.body.skills?.length) {
-        await client.query("DELETE FROM user_skills WHERE user_id = $1", [userId]);
-        for (const skillName of req.body.skills) {
-          const skillRes = await client.query(
-            "SELECT id FROM skills WHERE name ILIKE $1", [skillName]
-          );
-          if (skillRes.rowCount > 0) {
-            await client.query(
-              "INSERT INTO user_skills (user_id, skill_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
-              [userId, skillRes.rows[0].id]
-            );
-          }
-        }
+        await setUserSkills(client, userId, req.body.skills);
       }
 
       await client.query("COMMIT");
@@ -190,4 +190,4 @@ async function uploadProfilePhoto(req, res, next) {
   }
 }
 
-module.exports = { getPublicProfile, updateProfile, getEmployerProfile, updateEmployerProfile, uploadProfilePhoto };
+module.exports = { getPublicProfile, updateProfile, getEmployerProfile, updateEmployerProfile, uploadProfilePhoto, listSkillOptions };

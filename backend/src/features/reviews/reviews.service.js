@@ -35,6 +35,11 @@ async function createReview({ reviewer_id, reviewee_id, job_id = null, rating, c
     return review;
   } catch (err) {
     await client.query("ROLLBACK");
+    if (err.code === "23505") {
+      const dup = new Error("Kamu sudah memberi ulasan untuk freelancer ini di pekerjaan yang sama");
+      dup.statusCode = 400;
+      throw dup;
+    }
     throw err;
   } finally {
     client.release();

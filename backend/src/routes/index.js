@@ -18,5 +18,6 @@ router.use("/reviews",       require("../features/reviews/reviews.routes"));
 router.use("/chat",          require("../features/chat/chat.routes"));
 router.use("/auth",          require("../features/auth-extended/authExtended.routes"));
 router.use("/session",       require("../features/session/session.routes"));
+router.use("/ai",            require("../features/ai-chat/aiChat.routes"));
 
 module.exports = router;

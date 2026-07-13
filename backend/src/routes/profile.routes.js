@@ -15,6 +15,8 @@ router.get("/employer",       authenticate, (req, res, next) => {
   c.getEmployerProfile(req, res, next);
 });
 router.put("/employer",       authenticate, requireRole("employer", "event_organizer"), c.updateEmployerProfile);
+// harus di atas "/:userId" agar tidak tertangkap route dinamis
+router.get("/skills",         c.listSkillOptions);
 router.get("/:userId",        c.getPublicProfile);
 router.get("/employer/:userId", c.getEmployerProfile);
 

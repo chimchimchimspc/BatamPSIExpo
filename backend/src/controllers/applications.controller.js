@@ -53,7 +53,7 @@ async function getMyApplications(req, res, next) {
 
     const { rows } = await query(
       `SELECT a.id, a.status, a.submitted_at, a.reviewed_at, a.expires_at,
-              a.cover_letter,
+              a.cover_letter, a.work_note, a.employer_feedback, a.work_submitted_at,
               jp.id AS job_id, jp.title AS job_title,
               jp.employer_id AS employer_id,
               ep.company_name AS company,
@@ -96,6 +96,7 @@ async function getApplicationsForJob(req, res, next) {
 
     const { rows } = await query(
       `SELECT a.id, a.status, a.submitted_at, a.cover_letter,
+              a.work_note, a.employer_feedback, a.work_submitted_at,
               u.id AS freelancer_id, u.full_name AS name,
               fp.level, fp.rating, fp.completed_projects,
               fp.passport_days_completed,
@@ -147,7 +148,10 @@ async function updateApplicationStatus(req, res, next) {
   try {
     const { id } = req.params;
     const { status } = req.body;
-    const allowed = ["reviewed", "accepted", "rejected", "completed"];
+    // Transisi tahap penyaringan awal saja. Alur pasca-diterima (kerjaan
+    // ditandai selesai / disetujui / revisi / diberhentikan) punya endpoint
+    // sendiri di bawah supaya aturan tiap transisi jelas dan tidak campur aduk.
+    const allowed = ["reviewed", "accepted", "rejected"];
     if (!allowed.includes(status)) return badRequest(res, "Invalid status");
 
     const appRes = await query(
@@ -157,11 +161,6 @@ async function updateApplicationStatus(req, res, next) {
     if (!appRes.rows[0]) return notFound(res, "Application not found");
     if (appRes.rows[0].employer_id !== req.user.id && req.user.role !== "admin") {
       return forbidden(res);
-    }
-
-    // Pekerjaan hanya bisa ditandai selesai setelah pelamar diterima
-    if (status === "completed" && appRes.rows[0].status !== "accepted") {
-      return badRequest(res, "Pelamar harus diterima dulu sebelum pekerjaan ditandai selesai");
     }
 
     const { rows } = await query(
@@ -174,22 +173,9 @@ async function updateApplicationStatus(req, res, next) {
 
     const app = appRes.rows[0];
 
-    if (status === "completed") {
-      // Tambah hitungan proyek selesai di profil freelancer & total hired employer
-      await query(
-        "UPDATE freelancer_profiles SET completed_projects = completed_projects + 1, updated_at = NOW() WHERE user_id = $1",
-        [app.freelancer_id]
-      );
-      await query(
-        "UPDATE employer_profiles SET total_hired = total_hired + 1 WHERE user_id = $1",
-        [req.user.id]
-      );
-    }
-
     const msgMap = {
       accepted: "Selamat! Lamaran kamu diterima!",
       rejected: "Terima kasih telah melamar. Kali ini kami belum bisa menerima lamaran kamu.",
-      completed: "Pekerjaanmu telah ditandai selesai oleh employer! Cek ulasan barunya di profilmu 🎉",
     };
     if (msgMap[status]) {
       await query(
@@ -200,6 +186,157 @@ async function updateApplicationStatus(req, res, next) {
     }
 
     return success(res, rows[0], "Status updated");
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Freelancer menandai pekerjaan selesai (bisa juga kirim ulang setelah revisi)
+async function submitWork(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { note } = req.body;
+
+    const appRes = await query("SELECT * FROM applications WHERE id = $1", [id]);
+    if (!appRes.rows[0]) return notFound(res, "Application not found");
+    const app = appRes.rows[0];
+    if (app.freelancer_id !== req.user.id) return forbidden(res);
+    if (!["accepted", "revision_requested"].includes(app.status)) {
+      return badRequest(res, "Pekerjaan hanya bisa ditandai selesai setelah lamaran diterima");
+    }
+
+    const { rows } = await query(
+      `UPDATE applications
+       SET status = 'submitted_for_review', work_note = $1, work_submitted_at = NOW()
+       WHERE id = $2
+       RETURNING *`,
+      [note || null, id]
+    );
+
+    const jobRes = await query("SELECT title, employer_id FROM job_postings WHERE id = $1", [app.job_id]);
+    const job = jobRes.rows[0];
+    await query(
+      `INSERT INTO notifications (user_id, type, title, message, related_id, related_type)
+       VALUES ($1, 'application_update', 'Pekerjaan Ditandai Selesai', $2, $3, 'application')`,
+      [job.employer_id, `Freelancer menandai pekerjaan "${job.title}" sudah selesai. Yuk cek hasilnya.`, id]
+    );
+
+    return success(res, rows[0], "Pekerjaan ditandai selesai, menunggu review employer");
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Employer menyetujui hasil kerja — final, dihitung sebagai proyek selesai
+async function completeApplication(req, res, next) {
+  try {
+    const { id } = req.params;
+    const appRes = await query(
+      "SELECT a.*, jp.employer_id, jp.title FROM applications a JOIN job_postings jp ON jp.id = a.job_id WHERE a.id = $1",
+      [id]
+    );
+    if (!appRes.rows[0]) return notFound(res, "Application not found");
+    const app = appRes.rows[0];
+    if (app.employer_id !== req.user.id && req.user.role !== "admin") return forbidden(res);
+    if (app.status !== "submitted_for_review") {
+      return badRequest(res, "Freelancer belum menandai pekerjaan ini selesai");
+    }
+
+    const { rows } = await query(
+      `UPDATE applications SET status = 'completed', reviewed_at = NOW() WHERE id = $1 RETURNING *`,
+      [id]
+    );
+
+    await query(
+      "UPDATE freelancer_profiles SET completed_projects = completed_projects + 1, updated_at = NOW() WHERE user_id = $1",
+      [app.freelancer_id]
+    );
+    await query(
+      "UPDATE employer_profiles SET total_hired = total_hired + 1 WHERE user_id = $1",
+      [req.user.id]
+    );
+    await query(
+      `INSERT INTO notifications (user_id, type, title, message, related_id, related_type)
+       VALUES ($1, 'application_update', 'Pekerjaan Disetujui', $2, $3, 'application')`,
+      [app.freelancer_id, `Pekerjaanmu untuk "${app.title}" disetujui employer! Cek ulasan barunya di profilmu 🎉`, id]
+    );
+
+    return success(res, rows[0], "Pekerjaan disetujui dan ditandai selesai");
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Employer minta revisi — freelancer kerja ulang lalu submit-work lagi
+async function requestRevision(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { note } = req.body;
+    if (!note || !note.trim()) return badRequest(res, "Catatan revisi wajib diisi");
+
+    const appRes = await query(
+      "SELECT a.*, jp.employer_id, jp.title FROM applications a JOIN job_postings jp ON jp.id = a.job_id WHERE a.id = $1",
+      [id]
+    );
+    if (!appRes.rows[0]) return notFound(res, "Application not found");
+    const app = appRes.rows[0];
+    if (app.employer_id !== req.user.id && req.user.role !== "admin") return forbidden(res);
+    if (app.status !== "submitted_for_review") {
+      return badRequest(res, "Freelancer belum menandai pekerjaan ini selesai");
+    }
+
+    const { rows } = await query(
+      `UPDATE applications
+       SET status = 'revision_requested', employer_feedback = $1, reviewed_at = NOW()
+       WHERE id = $2
+       RETURNING *`,
+      [note.trim(), id]
+    );
+
+    await query(
+      `INSERT INTO notifications (user_id, type, title, message, related_id, related_type)
+       VALUES ($1, 'application_update', 'Revisi Diminta', $2, $3, 'application')`,
+      [app.freelancer_id, `Employer meminta revisi untuk "${app.title}": ${note.trim()}`, id]
+    );
+
+    return success(res, rows[0], "Revisi diminta ke freelancer");
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Employer memberhentikan kerja sama — final, tidak bisa lanjut lagi
+async function terminateApplication(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { note } = req.body;
+
+    const appRes = await query(
+      "SELECT a.*, jp.employer_id, jp.title FROM applications a JOIN job_postings jp ON jp.id = a.job_id WHERE a.id = $1",
+      [id]
+    );
+    if (!appRes.rows[0]) return notFound(res, "Application not found");
+    const app = appRes.rows[0];
+    if (app.employer_id !== req.user.id && req.user.role !== "admin") return forbidden(res);
+    if (!["accepted", "submitted_for_review", "revision_requested"].includes(app.status)) {
+      return badRequest(res, "Kerja sama ini tidak bisa diberhentikan dari status saat ini");
+    }
+
+    const { rows } = await query(
+      `UPDATE applications
+       SET status = 'terminated', employer_feedback = $1, reviewed_at = NOW()
+       WHERE id = $2
+       RETURNING *`,
+      [note || null, id]
+    );
+
+    await query(
+      `INSERT INTO notifications (user_id, type, title, message, related_id, related_type)
+       VALUES ($1, 'application_update', 'Kerja Sama Diberhentikan', $2, $3, 'application')`,
+      [app.freelancer_id, `Employer memberhentikan kerja sama untuk "${app.title}"${note ? `: ${note.trim()}` : "."}`, id]
+    );
+
+    return success(res, rows[0], "Kerja sama diberhentikan");
   } catch (err) {
     next(err);
   }
@@ -228,4 +365,5 @@ module.exports = {
   submitApplication, getMyApplications,
   getApplicationsForJob, getEmployerApplications,
   updateApplicationStatus, withdrawApplication,
+  submitWork, completeApplication, requestRevision, terminateApplication,
 };
