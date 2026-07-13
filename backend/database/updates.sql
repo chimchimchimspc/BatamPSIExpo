@@ -20,6 +20,9 @@ ALTER TABLE events ALTER COLUMN longitude TYPE double precision;
 -- ---- Status lamaran 'completed' (pekerjaan selesai + ulasan) ----
 ALTER TYPE application_status ADD VALUE IF NOT EXISTS 'completed';
 
+-- ---- Status event 'completed' (pengelola menandai event selesai) ----
+ALTER TYPE event_status ADD VALUE IF NOT EXISTS 'completed';
+
 -- ---- Pelacak minat untuk fitur rekomendasi dashboard ----
 CREATE TABLE IF NOT EXISTS user_view_preferences (
   id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

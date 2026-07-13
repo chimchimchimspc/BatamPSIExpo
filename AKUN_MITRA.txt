@@ -1,0 +1,117 @@
+==============================================================
+ AKUN MITRA (PARTNER) — Jogja Freelance Passport
+ Dibuat otomatis saat reset listing lowongan & event
+==============================================================
+
+Password sama untuk SEMUA akun mitra di bawah ini:
+
+    Mitra@2026
+
+Login di: http://localhost:3000/auth/login
+
+
+--------------------------------------------------------------
+AKUN MITRA (semua role "employer" — bisa pasang lowongan DAN
+bikin event dari akun yang sama, tidak dipisah per jenis akun)
+--------------------------------------------------------------
+
+1. Batik Nusantara Digital (Fashion & E-commerce)
+   Email    : mitra.batiknusantara@jogjafreelance.id
+   Password : Mitra@2026
+   Lowongan : Desainer UI/UX Aplikasi E-Commerce Batik
+              Content Writer Produk Batik untuk Marketplace
+              Desain Logo & Brand Kit Lini Produk Baru
+
+2. Kopi Kita Coffee & Media (F&B & Media Konten)
+   Email    : mitra.kopikita@jogjafreelance.id
+   Password : Mitra@2026
+   Lowongan : Social Media Specialist Kopi Kita
+              Video Editor Konten Reels & TikTok
+
+3. EduTech Jogja (Education Technology)
+   Email    : mitra.edutechjogja@jogjafreelance.id
+   Password : Mitra@2026
+   Lowongan : Frontend Developer React untuk Platform Belajar
+              Mobile Developer Flutter — Aplikasi Belajar Siswa
+              Data Entry & Riset Konten Kurikulum
+   Event    : Workshop Membuat Konten Belajar Interaktif
+
+4. GreenTech Solutions (Sustainability & IoT)
+   Email    : mitra.greentech@jogjafreelance.id
+   Password : Mitra@2026
+   Lowongan : Backend Developer Node.js Platform IoT
+              UI Designer Dashboard Monitoring Energi
+              Fotografer Produk untuk Materi Marketing
+              Video Editor Dokumentasi Produk & Company Profile
+   Event    : GreenTech Meetup: Teknologi untuk Keberlanjutan
+
+5. TaniConnect (AgriTech)
+   Email    : mitra.tanikonek@jogjafreelance.id
+   Password : Mitra@2026
+   Lowongan : Backend Developer Laravel untuk Platform Petani
+              UI/UX Designer Aplikasi Marketplace Hasil Tani
+              Content Writer Edukasi Pertanian Digital
+   Event    : Workshop Digitalisasi UMKM Pertanian
+
+6. Jogja Print & Merch (Percetakan & Merchandise)
+   Email    : mitra.jogjaprint@jogjafreelance.id
+   Password : Mitra@2026
+   Lowongan : Graphic Designer Merchandise & Packaging
+              Fotografer Produk Merchandise
+              Social Media Ads Specialist
+              Data Entry Riset Kompetitor Marketplace
+   Event    : Coffee Chat: Ngobrol Bisnis Merchandise & Cetak
+
+
+7. Jogja Creative Hub (Komunitas & Event Kreatif)
+   Email    : mitra.creativehub@jogjafreelance.id
+   Password : Mitra@2026
+   Event    : Workshop Portfolio Design untuk Freelancer Pemula
+              Coffee Chat: Ngobrol Santai Freelance vs Kerja Kantoran
+              Creative Mixer: Desainer & Content Creator Jogja
+              Meetup Ilustrator & Motion Designer Jogja
+
+8. Jogja Developer Community (Komunitas Teknologi)
+   Email    : mitra.devcommunity@jogjafreelance.id
+   Password : Mitra@2026
+   Event    : Meetup Developer Jogja: AI & Web
+              Workshop Next.js untuk Pemula
+              Coffee Chat: Karier di Startup Teknologi
+              Workshop Flutter Lanjutan: State Management
+
+9. Startup Weekend Jogja (Komunitas Startup)
+   Email    : mitra.startupweekend@jogjafreelance.id
+   Password : Mitra@2026
+   Event    : Startup Weekend Jogja: Demo Day
+              Meetup Founder & Builder Jogja
+
+
+--------------------------------------------------------------
+ADMIN (untuk cek/approve dari sisi admin)
+--------------------------------------------------------------
+
+   Email    : admin@jogjafreelance.id
+   Password : Admin@12345
+
+   Catatan: password admin lama di seed.sql sudah tidak valid
+   (hash rusak), jadi password di-reset ke atas supaya bisa login.
+
+
+--------------------------------------------------------------
+CATATAN
+--------------------------------------------------------------
+
+- Total saat ini: 22 lowongan & 14 event, semua berstatus "active"
+  (langsung tampil publik, tidak perlu di-approve admin lagi).
+- Semua 9 akun mitra berperan "employer", termasuk yang cuma bikin
+  event (Jogja Creative Hub, Jogja Developer Community, Startup
+  Weekend Jogja). Di aplikasi ini role "employer" dan
+  "event_organizer" diperlakukan identik di semua tempat (menu,
+  dashboard, izin bikin event), dan form daftar akun juga cuma
+  menawarkan "employer" — jadi tidak perlu dipisah jadi 2 jenis akun.
+- Semua lowongan & event LAMA sudah dihapus beserta data terkait
+  (lamaran, RSVP, skill tag) — akun mitra/lain yang lama tetap ada
+  di database tapi sudah tidak punya listing.
+- Script sumber: backend/database/seed_mitra.js
+  (jalankan ulang "node database/seed_mitra.js" dari folder backend
+  kalau perlu reset lagi — script ini akan clear & re-seed dari awal).

@@ -135,6 +135,19 @@ async function rejectJob(req, res, next) {
   }
 }
 
+// Admin bisa hapus lowongan kapan pun, termasuk yang sudah aktif/terverifikasi —
+// bukan cuma yang masih pending_review.
+async function deleteJob(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { rowCount } = await query("DELETE FROM job_postings WHERE id = $1", [id]);
+    if (!rowCount) return notFound(res, "Job not found");
+    return success(res, null, "Job deleted");
+  } catch (err) {
+    next(err);
+  }
+}
+
 async function listAllEvents(req, res, next) {
   try {
     const { page = 1, limit = 20, status, search } = req.query;
@@ -234,6 +247,19 @@ async function rejectEvent(req, res, next) {
     }
 
     return success(res, null, "Event rejected");
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Admin bisa hapus event kapan pun, termasuk yang sudah aktif/terverifikasi —
+// bukan cuma yang masih pending_review.
+async function deleteEvent(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { rowCount } = await query("DELETE FROM events WHERE id = $1", [id]);
+    if (!rowCount) return notFound(res, "Event not found");
+    return success(res, null, "Event deleted");
   } catch (err) {
     next(err);
   }
@@ -475,8 +501,8 @@ async function getAnalyticsDetail(req, res, next) {
 
 module.exports = {
   getDashboardAnalytics, getAnalyticsDetail,
-  listAllJobs, getPendingJobs, approveJob, rejectJob,
-  listAllEvents, getPendingEvents, approveEvent, rejectEvent,
+  listAllJobs, getPendingJobs, approveJob, rejectJob, deleteJob,
+  listAllEvents, getPendingEvents, approveEvent, rejectEvent, deleteEvent,
   listUsers, verifyUserBadge, getPendingBadges,
   listCategories, createCategory, updateCategory, deleteCategory,
   listSkills, createSkill, updateSkill, deleteSkill,
